@@ -37,7 +37,7 @@ class CreateOrImportPage extends StatelessWidget {
                 width: 150,
                 height: 200,
                 child: Image.asset(
-                  'assets/images/logo.png',
+                  'assets/logo_moneymint.png',
                   fit: BoxFit.contain,
                 ),
               ),

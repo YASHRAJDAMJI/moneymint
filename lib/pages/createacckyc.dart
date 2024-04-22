@@ -15,12 +15,32 @@ class _UserDataInputPageState extends State<UserDataInputPage> {
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _aadharController = TextEditingController();
   final TextEditingController _panCardController = TextEditingController();
+  final TextEditingController _passcon = TextEditingController();
+
+  DateTime? _selectedDate;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _dobController.text =
+        picked.toIso8601String().split("T")[0]; // Extract date part only
+      });
+    }
+  }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
         // Create user account with email as username and PAN number as password
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        UserCredential userCredential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
           email: _emailController.text, // Using email as username
           password: _panCardController.text, // Using PAN card as password
         );
@@ -34,7 +54,9 @@ class _UserDataInputPageState extends State<UserDataInputPage> {
           'email': _emailController.text,
           'dob': _dobController.text,
           'aadharNumber': _aadharController.text,
-          'panCard': _panCardController.text,
+          'pass': _panCardController.text,
+          'balance': '0.0',
+          'panCard': _passcon.text,
         });
 
         // Navigate to the next screen
@@ -59,90 +81,180 @@ class _UserDataInputPageState extends State<UserDataInputPage> {
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _dobController,
-                decoration: InputDecoration(labelText: 'Date of Birth'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter your date of birth';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _aadharController,
-                decoration: InputDecoration(labelText: 'Aadhar Number'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter your Aadhar number';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _panCardController,
-                decoration: InputDecoration(labelText: 'PAN Card'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter your PAN card';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: Text('Next'),
-              ),
-            ],
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () => _selectDate(context),
+                  child: AbsorbPointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
+                          width: 1.0,
+                        ),
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      child: TextFormField(
+                        controller: _dobController,
+                        decoration: InputDecoration(
+                          labelText: 'Date of Birth',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 10.0),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Please enter your date of birth';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: TextFormField(
+                    controller: _aadharController,
+                    decoration: InputDecoration(
+                      labelText: 'Aadhar Number',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter your Aadhar number';
+                      }
+                      if (value.length != 12) {
+                        return 'Aadhar number must be 12 digits';
+                      }
+                      return null;
+                    },
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: TextFormField(
+                    controller: _panCardController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter your PAN card';
+                      }
+                      if (value.length != 10) {
+                        return 'PAN card must be 10 alphanumeric characters';
+                      }
+                      return null;
+                    },
+                    obscureText: true, // Hide password text
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                  child: TextFormField(
+                    controller: _passcon,
+                    decoration: InputDecoration(
+                      labelText: 'PAN Card',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Please enter your PanCardNumber ';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _submitForm,
+                  child: Text('Next'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
-
-class NextScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Next Screen'),
-      ),
-      body: Center(
-        child: Text('This is the next screen'),
-      ),
-    );
-  }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: UserDataInputPage(),
-  ));
 }

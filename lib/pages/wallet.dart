@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web3_wallet/providers/wallet_provider.dart';
 import 'package:web3_wallet/pages/create_or_import.dart';
@@ -9,7 +9,9 @@ import 'package:web3_wallet/utils/get_balances.dart';
 import 'package:web3_wallet/components/nft_balances.dart';
 import 'package:web3_wallet/components/send_tokens.dart';
 import 'dart:convert';
-//this i sthe main screen where user can check the wallet
+
+import '../qrcodegenrate.dart';
+
 class WalletPage extends StatefulWidget {
   const WalletPage({Key? key}) : super(key: key);
 
@@ -21,57 +23,69 @@ class _WalletPageState extends State<WalletPage> {
   String walletAddress = '';
   String balance = '';
   String pvKey = '';
+  String newBalance = '';
+  String anumber = '';
 
   @override
   void initState() {
     super.initState();
     loadWalletData();
   }
-  Future<void> saveWalletAddressToFirestore(String walletAddress) async {
+
+  Future<void> loadWalletData() async {
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
 
+    print("here");
+
     if (user != null) {
+      print("User is signed in with UID: ${user.uid}");
       String uid = user.uid;
       try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .set({'walletAddress': walletAddress}, SetOptions(merge: true));
+        DocumentSnapshot walletSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+        if (walletSnapshot.exists) {
+          print("atexists");
+          String? walletAddressFromFirestore =
+          walletSnapshot.get('aadharNumber');
+          if (walletAddressFromFirestore != null) {
+            print("at 63");
+            newBalance = walletSnapshot['balance'] ?? '0';
+            anumber = walletSnapshot['aadharNumber'] ?? '0';
+            walletAddress = anumber;
+            print("thedata");
+            print(newBalance);
+
+            print("78");
+
+            // Transform balance from wei to ether
+            EtherAmount latestBalance = EtherAmount.fromBigInt(
+                EtherUnit.wei, BigInt.parse(newBalance));
+            String latestBalanceInEther =
+            latestBalance.getValueInUnit(EtherUnit.ether).toString();
+
+            setState(() {
+              balance = newBalance;
+            });
+          } else {
+            print("Wallet address not found in Firestore for user: $uid");
+            // Handle case where wallet address is not found in Firestore
+            // For example, prompt user to create or import a wallet
+          }
+        } else {
+          print("Wallet document does not exist in Firestore for user: $uid");
+          // Handle case where wallet document does not exist in Firestore
+          // For example, prompt user to create or import a wallet
+        }
       } catch (e) {
-        print('Error saving wallet address: $e');
+        print('Error loading wallet data: $e');
+        // Handle error loading wallet data
       }
-    }
-  }
-
-  Future<void> loadWalletData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? privateKey = prefs.getString('privateKey');
-    if (privateKey != null) {
-      final walletProvider = WalletProvider();
-      await walletProvider.loadPrivateKey();
-      EthereumAddress address = await walletProvider.getPublicKey(privateKey);
-      print(address.hex);
-      setState(() {
-        walletAddress = address.hex;
-        pvKey = privateKey;
-
-      });
-      await saveWalletAddressToFirestore(walletAddress);
-      print(pvKey);
-      String response = await getBalances(address.hex, 'sepolia');
-      dynamic data = json.decode(response);
-      String newBalance = data['balance'] ?? '0';
-
-      // Transform balance from wei to ether
-      EtherAmount latestBalance =
-          EtherAmount.fromBigInt(EtherUnit.wei, BigInt.parse(newBalance));
-      String latestBalanceInEther =
-          latestBalance.getValueInUnit(EtherUnit.ether).toString();
-
-      setState(() {
-        balance = latestBalanceInEther;
-      });
+    } else {
+      print("User is not signed in");
+      // Handle case where user is not logged in
+      // For example, prompt user to log in
     }
   }
 
@@ -80,167 +94,154 @@ class _WalletPageState extends State<WalletPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Wallet'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                // Update any necessary state variables or perform any actions to refresh the widget
+                loadWalletData();
+              });
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+
       ),
       body: Column(
+
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: MediaQuery.of(context).size.height * 0.4,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Wallet Address',
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
+            width: double.infinity,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: 150,
+              height: 200,
+              child: Image.asset(
+                'assets/images/wallet.png',
+                fit: BoxFit.fitWidth,
+              ),
+            ),
+          ),
+          const SizedBox(height: 50.0),
+          Card(
+            elevation: 3,
+            margin: EdgeInsets.all(16),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Wallet Address',
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  walletAddress,
-                  style: const TextStyle(
-                    fontSize: 20.0,
+                  SizedBox(height: 16.0),
+                  Text(
+                    walletAddress,
+                    style: TextStyle(
+                      fontSize: 20.0,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32.0),
-                const Text(
-                  'Balance',
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
+                ],
+              ),
+            ),
+          ),
+          Card(
+            elevation: 3,
+            margin: EdgeInsets.all(16),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Balance',
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  balance,
-                  style: const TextStyle(
-                    fontSize: 20.0,
+                  SizedBox(height: 16.0),
+                  Text(
+                    newBalance,
+                    style: TextStyle(
+                      fontSize: 20.0,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Column(
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'sendButton', // Unique tag for send button
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                SendTokensPage(privateKey: pvKey)),
-                      );
-                    },
-                    child: const Icon(Icons.send),
+              Expanded(
+                child: Card(
+                  elevation: 3,
+                  margin: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      FloatingActionButton(
+                        heroTag: 'sendButton',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SendTokensPage(privateKey: pvKey),
+                            ),
+                          );
+
+                        },
+                        child: Icon(Icons.send),
+                      ),
+                      SizedBox(height: 2.0),
+                      Text('Send'),
+                    ],
                   ),
-                  const SizedBox(height: 8.0),
-                  const Text('Send'),
-                ],
+                ),
               ),
-              Column(
-                children: [
-                  FloatingActionButton(
-                    heroTag: 'refreshButton', // Unique tag for send button
-                    onPressed: () {
-                      setState(() {
-                        // Update any necessary state variables or perform any actions to refresh the widget
-                      });
-                    },
-                    child: const Icon(Icons.replay_outlined),
+              Expanded(
+                child: Card(
+                  elevation: 3,
+                  margin: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      FloatingActionButton(
+                        heroTag: 'Recive',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  QRCodePage(data: anumber),
+                            ),
+                          );
+                        },
+                        child: Icon(Icons.money_rounded),
+                      ),
+                      SizedBox(height: 20.0),
+                      Text('Receive'),
+                    ],
                   ),
-                  const SizedBox(height: 8.0),
-                  const Text('Refresh'),
-                ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 30.0),
+          SizedBox(height: 5.0),
           Expanded(
             child: DefaultTabController(
               length: 3,
               child: Column(
-                children: [
-                  const TabBar(
-                    labelColor: Colors.blue,
-                    tabs: [
-                      Tab(text: 'Assets'),
-                      Tab(text: 'NFTs'),
-                      Tab(text: 'Options'),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        // Assets Tab
-                        Column(
-                          children: [
-                            Card(
-                              margin: const EdgeInsets.all(16.0),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Sepolia ETH',
-                                      style: TextStyle(
-                                        fontSize: 24.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      balance,
-                                      style: const TextStyle(
-                                        fontSize: 24.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                        // NFTs Tab
-                        SingleChildScrollView(
-                            child: NFTListPage(
-                                address: walletAddress, chain: 'sepolia')),
-                        // Activities Tab
-                        Center(
-                          child: ListTile(
-                            leading: const Icon(Icons.logout),
-                            title: const Text('Logout'),
-                            onTap: () async {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.remove('privateKey');
-                              // ignore: use_build_context_synchronously
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CreateOrImportPage(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                // Add your tab contents here
               ),
             ),
           ),

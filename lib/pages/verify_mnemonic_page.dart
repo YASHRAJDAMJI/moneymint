@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:web3_wallet/providers/wallet_provider.dart';
 import 'package:web3_wallet/pages/wallet.dart';
 
+import '../mainscreenn.dart';
+
 class VerifyMnemonicPage extends StatefulWidget {
   final String mnemonic;
 
@@ -34,7 +36,7 @@ class _VerifyMnemonicPageState extends State<VerifyMnemonicPage> {
     void navigateToWalletPage() {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => WalletPage()),
+        MaterialPageRoute(builder: (context) => BottomNavigationExample()),
       );
     }
 

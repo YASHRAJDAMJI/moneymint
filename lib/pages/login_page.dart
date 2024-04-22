@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:web3_wallet/providers/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../mainscreenn.dart';
 import 'wallet.dart';
 import 'create_or_import.dart';
 
@@ -16,7 +17,7 @@ class LoginPage extends StatelessWidget {
       return const CreateOrImportPage();
     } else {
       // If private key exists, load WalletPage
-      return WalletPage();
+      return BottomNavigationExample();
     }
   }
 }

@@ -19,6 +19,7 @@ class WalletProvider extends ChangeNotifier implements WalletAddressService {
   Future<void> loadPrivateKey() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     privateKey = prefs.getString('privateKey');
+
   }
 
   // set the private key in the shared preferences
